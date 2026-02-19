@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-8qy$u&s5q%_y972eal7wk4o9t7w0$x*&5#x2z!gs3_(a(1n!79
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "partsdatabase.uz",
+    "www.partsdatabase.uz",
+    "project-a-1-u0h6.onrender.com"
+]
+
 
 
 # Application definition
