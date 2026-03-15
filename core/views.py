@@ -2,7 +2,7 @@ from django.http import HttpResponse
 
 
 def home(request):
-    return HttpResponse("Хули смотришь? Съебался отсюда!")
+    return HttpResponse("Сайт работает 🚀")
 
 
 def health(request):
