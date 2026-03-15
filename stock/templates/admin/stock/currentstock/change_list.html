@@ -1,0 +1,522 @@
+{% extends "admin/change_list.html" %}
+
+{% block extrahead %}
+  {{ block.super }}
+
+  {# ✅ Tabulator (CDN) — без pip #}
+  <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.2.5/dist/css/tabulator.min.css">
+
+  <style>
+    /* ---------------------------
+       Layout / высота
+    --------------------------- */
+    .change-list #changelist {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 170px);
+    }
+
+    /* Контейнер под grid */
+    #excel-grid {
+      flex: 1 1 auto;
+      min-height: 320px;
+      border: 1px solid var(--hairline-color, #ddd);
+      border-radius: 4px;
+      background: var(--body-bg, #fff);
+      overflow: hidden;
+    }
+
+    /* Tabulator: чтобы занял весь контейнер */
+    .tabulator {
+      height: 100% !important;
+      border: none !important;
+      font-size: 12px;
+    }
+
+    .tabulator .tabulator-header {
+      background: var(--body-bg, #fff);
+      border-bottom: 1px solid rgba(0,0,0,.08);
+    }
+
+    .tabulator .tabulator-cell {
+      padding: 6px 8px;
+      white-space: nowrap;
+    }
+
+    .tabulator .cell-wrap {
+      white-space: normal !important;
+      line-height: 1.2;
+    }
+
+    /* ---------------------------
+       Sticky bottom панель
+    --------------------------- */
+    .change-list #changelist .sticky-bottom {
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+      background: var(--body-bg, #fff);
+      border: 1px solid var(--hairline-color, #ddd);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .change-list #changelist .sticky-xscroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      border-top: 1px solid rgba(0,0,0,.06);
+      padding-top: 6px;
+    }
+
+    .change-list #changelist .sticky-xscroll .scroll-inner {
+      height: 1px;
+    }
+
+    /* Панель управления grid */
+    .grid-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .grid-toolbar .left,
+    .grid-toolbar .right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .grid-toolbar label {
+      font-size: 12px;
+      color: var(--body-quiet-color, #555);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .grid-toolbar select,
+    .grid-toolbar input {
+      height: 28px;
+      padding: 4px 8px;
+      border: 1px solid var(--hairline-color, #ccc);
+      border-radius: 4px;
+      background: var(--body-bg, #fff);
+      font-size: 12px;
+    }
+
+    .grid-toolbar .hint {
+      font-size: 12px;
+      color: var(--body-quiet-color, #666);
+      white-space: nowrap;
+    }
+
+    .grid-toolbar .btn {
+      height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--hairline-color, #ccc);
+      border-radius: 4px;
+      background: var(--body-bg, #fff);
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .grid-toolbar .btn:hover {
+      background: rgba(0,0,0,.03);
+    }
+
+    /* ---------------------------
+       Кнопки (object-tools)
+    --------------------------- */
+    .change-list .object-tools ul.object-tools {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .change-list .object-tools a {
+      background-color: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px 6px !important;
+      color: var(--link-fg, #0b3d91);
+      font-weight: 600;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .change-list .object-tools a:hover {
+      text-decoration: underline;
+    }
+
+    /* ---------------------------
+       Иконки
+    --------------------------- */
+    .tool-icon {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+
+  <script src="https://unpkg.com/tabulator-tables@6.2.5/dist/js/tabulator.min.js"></script>
+{% endblock %}
+
+{% block object-tools %}
+  <div class="object-tools">
+    <ul class="object-tools">
+
+      <li>
+        <a href="{% url 'admin:currentstock_import' %}">
+          Import Excel
+          <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </a>
+      </li>
+
+      <li>
+        {# ✅ ВАЖНО: добавляем текущие фильтры/поиск в export #}
+        <a href="{% url 'admin:currentstock_export' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+          Export Excel
+          <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v13"></path>
+            <path d="M7 11l5 5 5-5"></path>
+            <path d="M4 21h16"></path>
+          </svg>
+        </a>
+      </li>
+
+      {{ block.super }}
+
+    </ul>
+  </div>
+{% endblock %}
+
+{% block result_list %}
+  <div id="changelist">
+
+    {# ✅ Excel Grid (без страниц, один список) #}
+    <div id="excel-grid"></div>
+
+    <div class="sticky-bottom">
+
+      <div class="grid-toolbar">
+        <div class="left">
+          <label>
+            Load batch:
+            <select id="grid-page-size">
+              <option value="200">200</option>
+              <option value="500" selected>500</option>
+              <option value="1000">1000</option>
+              <option value="2000">2000</option>
+              <option value="5000">5000</option>
+            </select>
+          </label>
+
+          <button type="button" class="btn" id="grid-clear-filters">Clear column filters</button>
+          <span class="hint">Tip: select cells like Excel → Ctrl+C → paste into Excel</span>
+        </div>
+
+        <div class="right">
+          <span class="hint" id="grid-status"></span>
+        </div>
+      </div>
+
+      <div class="sticky-xscroll" id="sticky-xscroll">
+        <div class="scroll-inner" id="sticky-xscroll-inner"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const gridEl = document.getElementById("excel-grid");
+      if (!gridEl || typeof Tabulator === "undefined") return;
+
+      // --- helpers форматирования (RU) ---
+      function fmtNumberRU(value, decimals) {
+        if (value === null || value === undefined || value === "") return "";
+        const n = Number(value);
+        if (Number.isNaN(n)) return "";
+        return new Intl.NumberFormat("ru-RU", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        }).format(n);
+      }
+
+      function fmtDateRU(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "";
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        return `${dd}.${mm}.${yyyy}`;
+      }
+
+      function getQueryStringWithout(keysToRemove) {
+        const url = new URL(window.location.href);
+        keysToRemove.forEach(k => url.searchParams.delete(k));
+        return url.searchParams.toString();
+      }
+
+      const baseDataUrl = "{% url 'admin:currentstock_grid_data' %}";
+
+      function buildAjaxURL(url, config, params) {
+        const qsBase = getQueryStringWithout(["page", "size", "sorters", "filters", "sortField", "sortDir"]);
+        const u = new URL(url, window.location.origin);
+
+        if (qsBase) {
+          const baseParams = new URLSearchParams(qsBase);
+          for (const [k, v] of baseParams.entries()) u.searchParams.set(k, v);
+        }
+
+        if (params && typeof params === "object") {
+          Object.keys(params).forEach((k) => {
+            const v = params[k];
+            if (v === null || v === undefined || v === "") return;
+
+            if (k === "sorters" || k === "filters") {
+              try {
+                u.searchParams.set(k, JSON.stringify(v));
+              } catch (e) {}
+              return;
+            }
+
+            u.searchParams.set(k, String(v));
+          });
+        }
+
+        return u.toString();
+      }
+
+      const pageSizeSelect = document.getElementById("grid-page-size");
+      const statusEl = document.getElementById("grid-status");
+      const clearBtn = document.getElementById("grid-clear-filters");
+
+      // batch size для прогрессивной загрузки
+      let batchSize = 500;
+      if (pageSizeSelect) {
+        batchSize = parseInt(pageSizeSelect.value, 10) || 500;
+        pageSizeSelect.addEventListener("change", () => {
+          const v = parseInt(pageSizeSelect.value, 10);
+          batchSize = Number.isFinite(v) ? v : 500;
+
+          // Перезагружаем данные с новым batch
+          table.setPageSize(batchSize);
+          table.setData(); // заново с page=1
+        });
+      }
+
+      // ✅ Tabulator init: один список + подгрузка при скролле (без страниц)
+      const table = new Tabulator(gridEl, {
+        layout: "fitDataFill",
+        height: "100%",
+        movableColumns: true,
+        resizableColumnFit: true,
+
+        // Excel-like selection + clipboard
+        selectableRange: true,
+        selectableRangeColumns: true,
+        selectableRangeRows: true,
+        selectableRangeClearCells: true,
+        clipboard: true,
+        clipboardCopyRowRange: "range",
+        clipboardCopyHeaders: false,
+
+        // Remote data
+        ajaxURL: baseDataUrl,
+        ajaxURLGenerator: buildAjaxURL,
+        ajaxFiltering: true,
+        ajaxSorting: true,
+
+        // ✅ ВАЖНО: выключаем страницы и включаем "infinite scroll"
+        pagination: false,
+        progressiveLoad: "scroll",             // подгружаем при прокрутке вниз
+        progressiveLoadDelay: 60,
+        progressiveLoadScrollMargin: 300,      // заранее подгрузить до низа
+        paginationSize: batchSize,             // размер пачки (Tabulator всё равно использует page/size)
+        paginationSizeSelector: false,
+
+        dataReceiveParams: {
+          last_page: "last_page",
+          data: "data",
+        },
+
+        columns: [
+          { title: "Подразделение", field: "department", headerFilter: "input", sorter: "string", width: 160 },
+          { title: "Склад", field: "warehouse", headerFilter: "input", sorter: "string", width: 170 },
+
+          { title: "Номенкл №", field: "nomenclature_no", headerFilter: "input", sorter: "string", width: 120 },
+          { title: "Наименование", field: "name", headerFilter: "input", sorter: "string", minWidth: 280, cssClass: "cell-wrap" },
+          { title: "Ед. изм.", field: "uom", headerFilter: "input", sorter: "string", width: 90 },
+
+          {
+            title: "Кол-во",
+            field: "qty",
+            sorter: "number",
+            headerFilter: "input",
+            headerFilterPlaceholder: "например 10",
+            hozAlign: "right",
+            width: 110,
+            formatter: (cell) => fmtNumberRU(cell.getValue(), 3),
+          },
+          {
+            title: "Цена",
+            field: "price",
+            sorter: "number",
+            headerFilter: "input",
+            hozAlign: "right",
+            width: 110,
+            formatter: (cell) => fmtNumberRU(cell.getValue(), 2),
+          },
+          {
+            title: "Сумма",
+            field: "amount",
+            sorter: "number",
+            headerFilter: "input",
+            hozAlign: "right",
+            width: 130,
+            formatter: (cell) => fmtNumberRU(cell.getValue(), 2),
+          },
+          {
+            title: "Мес. без движения",
+            field: "months_no_move",
+            sorter: "number",
+            headerFilter: "input",
+            hozAlign: "right",
+            width: 150,
+            formatter: (cell) => fmtNumberRU(cell.getValue(), 1),
+          },
+
+          {
+            title: "Дата прихода на склад",
+            field: "date_in",
+            sorter: "string",
+            headerFilter: "input",
+            width: 160,
+            formatter: (cell) => fmtDateRU(cell.getValue()),
+          },
+          {
+            title: "Дата расхода",
+            field: "date_out",
+            sorter: "string",
+            headerFilter: "input",
+            width: 140,
+            formatter: (cell) => fmtDateRU(cell.getValue()),
+          },
+          {
+            title: "Дата прихода в НГМК",
+            field: "date_in_ngmk",
+            sorter: "string",
+            headerFilter: "input",
+            width: 170,
+            formatter: (cell) => fmtDateRU(cell.getValue()),
+          },
+          {
+            title: "Загружено",
+            field: "loaded_at",
+            sorter: "string",
+            headerFilter: "input",
+            width: 170,
+            formatter: (cell) => fmtDateRU(cell.getValue()),
+          },
+        ],
+
+        ajaxResponse: function (url, params, response) {
+          // response: {data, total, last_page, page, size}
+          if (statusEl && response) {
+            const total = response.total ?? "";
+            statusEl.textContent = (total !== "")
+              ? `Total (filtered): ${total} | Loaded: ${table.getDataCount ? table.getDataCount() : ""}`
+              : "";
+          }
+          return response;
+        },
+      });
+
+      // Clear column filters
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          table.clearFilter(true);
+          table.setHeaderFilterValue("department", "");
+          table.setHeaderFilterValue("warehouse", "");
+          table.setHeaderFilterValue("nomenclature_no", "");
+          table.setHeaderFilterValue("name", "");
+          table.setHeaderFilterValue("uom", "");
+          table.setHeaderFilterValue("qty", "");
+          table.setHeaderFilterValue("price", "");
+          table.setHeaderFilterValue("amount", "");
+          table.setHeaderFilterValue("months_no_move", "");
+          table.setHeaderFilterValue("date_in", "");
+          table.setHeaderFilterValue("date_out", "");
+          table.setHeaderFilterValue("date_in_ngmk", "");
+          table.setHeaderFilterValue("loaded_at", "");
+          table.setData(); // перезагрузка
+        });
+      }
+
+      // --- Нижний горизонтальный скролл ---
+      const xscroll = document.getElementById("sticky-xscroll");
+      const xinner = document.getElementById("sticky-xscroll-inner");
+
+      function getHolder() {
+        return gridEl.querySelector(".tabulator-tableholder");
+      }
+
+      function syncWidth() {
+        const holder = getHolder();
+        if (!holder || !xinner) return;
+        xinner.style.width = holder.scrollWidth + "px";
+      }
+
+      let lock = false;
+
+      if (xscroll) {
+        xscroll.addEventListener("scroll", function () {
+          const holder = getHolder();
+          if (!holder || lock) return;
+          lock = true;
+          holder.scrollLeft = xscroll.scrollLeft;
+          lock = false;
+        });
+      }
+
+      gridEl.addEventListener("scroll", function () {
+        const holder = getHolder();
+        if (!holder || !xscroll || lock) return;
+        lock = true;
+        xscroll.scrollLeft = holder.scrollLeft;
+        lock = false;
+      }, true);
+
+      setTimeout(syncWidth, 300);
+      window.addEventListener("resize", () => setTimeout(syncWidth, 100));
+      table.on("dataProcessed", () => setTimeout(syncWidth, 50));
+      table.on("dataLoaded", () => setTimeout(syncWidth, 50));
+      table.on("columnMoved", () => setTimeout(syncWidth, 50));
+      table.on("columnResized", () => setTimeout(syncWidth, 50));
+    })();
+  </script>
+{% endblock %}
+
+{# ✅ Убираем стандартную пагинацию Django Admin #}
+{% block pagination %}{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="post" enctype="multipart/form-data" style="max-width: 600px;">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="default">Импортировать</button>
+  </form>
+{% endblock %}

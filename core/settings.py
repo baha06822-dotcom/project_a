@@ -26,9 +26,11 @@ SECRET_KEY = 'django-insecure-8qy$u&s5q%_y972eal7wk4o9t7w0$x*&5#x2z!gs3_(a(1n!79
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
     "partsdatabase.uz",
     "www.partsdatabase.uz",
-    "project-a-1-u0h6.onrender.com"
+    "project-a-1-u0h6.onrender.com",
 ]
 
 
@@ -43,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'parts',
+    "warehouse",
+    "stock",
 ]
 
 MIDDLEWARE = [
